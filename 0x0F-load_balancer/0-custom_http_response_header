@@ -1,26 +1,23 @@
 #!/usr/bin/env bash
-# Installs Nginx with the following configurations:
-#+    Listens on port 80.
-#+    Returns a page containing "Hello World!" when queried
-#+     at the root with a curl GET request.
-# Configures /redirect_me as a "301 Moved Permanently".
-# Includes a custom 404 page containing "Ceci n'est pas une page".
+# configures an Ubuntu machine with nginx
+FILE="/etc/nginx/sites-available/default"
+ERRORFILE="/usr/share/nginx/html/404error.html"
 
-sudo apt-get update
-sudo apt-get install -y nginx
+REDIRECT="\n\tlocation /redirect_me {\n\t\treturn 301 https://youtu.be/dQw4w9WgXcQ;\n\t}\n"
+ERRORREDIRECT="\n\terror_page 404 /404error.html;\n\tlocation = /404error.html {\n\t\troot /usr/share/nginx/html;\n\t\tinternal;\n\t}\n"
+CUSTOMHEADER='\n\tadd_header X-Served-By $hostname;\n'
 
-# Configure custom HTTP response header
-sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
-sudo cat <<EOT > /etc/nginx/sites-available/default
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
-    add_header X-Served-By \$hostname;
-    root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
-}
-EOT
+STRING="Hello World!"
+FOUR="Ceci n'est pas une page"
 
-# Restart Nginx service
-sudo systemctl restart nginx.service
+apt-get -y update
+apt-get -y install nginx
+ufw allow 'Nginx HTTP'
+echo "$STRING" > /var/www/html/index.nginx-debian.html
+sed -i "37i\ $REDIRECT" "$FILE"
+
+echo "$FOUR" > "$ERRORFILE"
+sed -i "37i\ $ERRORREDIRECT" "$FILE"
+
+sed -i "37i\ $CUSTOMHEADER" "$FILE"
+service nginx restart
